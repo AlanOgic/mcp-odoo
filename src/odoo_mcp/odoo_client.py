@@ -88,14 +88,12 @@ class OdooClient:
 
         # Xác thực và lấy user ID
         print(
-            f"Authenticating with database: {
-                self.db}, username: {self.username}",
+            f"Authenticating with database: {self.db}, username: {self.username}",
             file=os.sys.stderr,
         )
         try:
             print(
-                f"Making request to {
-                    self.hostname}/xmlrpc/2/common (attempt 1)",
+                f"Making request to {self.hostname}/xmlrpc/2/common (attempt 1)",
                 file=os.sys.stderr,
             )
             self.uid = self._common.authenticate(
