@@ -1,7 +1,7 @@
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
-
+# to update
 [project]
 name = "odoo-mcp"
 version = "0.0.3"
@@ -22,7 +22,6 @@ authors = [
 dependencies = [
     "mcp>=0.1.1",
     "requests>=2.31.0",
-    "xmlrpc>=0.4.1",
 ]
 
 [project.urls]
