@@ -1,4 +1,4 @@
-# Odoo MCP Server
+# Odoo MCP Server that just works
 
 An MCP server implementation that integrates with Odoo ERP systems, enabling AI assistants to interact with Odoo data and functionality through the Model Context Protocol.
 
@@ -127,20 +127,30 @@ Add this to your `claude_desktop_config.json`:
         "ODOO_PASSWORD",
         "mcp/odoo"
       ],
-      "env": {
-        "ODOO_URL": "https://your-odoo-instance.com",
-        "ODOO_DB": "your-database-name",
-        "ODOO_USERNAME": "your-username",
-        "ODOO_PASSWORD": "your-password-or-api-key"
-      }
     }
   }
 }
 ```
 
-## Installation
+## Installations methods
 
-### Python Package
+## 1. Docker Build and run
+
+Docker build:
+
+```bash
+docker build -t mcp/odoo:latest -f Dockerfile .
+```
+
+Docker run:
+
+```bash
+docker run -i --rm -e ODOO_URL -e ODOO_DB -e ODOO_USERNAME -e ODOO_PASSWORD mcp/odoo
+```
+
+
+
+### 2. Python Package
 
 ```bash
 pip install odoo-mcp
@@ -162,13 +172,7 @@ mcp dev odoo_mcp/server.py --with pandas --with numpy
 mcp dev odoo_mcp/server.py --with-editable .
 ```
 
-## Build
 
-Docker build:
-
-```bash
-docker build -t mcp/odoo:latest -f Dockerfile .
-```
 
 ## Parameter Formatting Guidelines
 
