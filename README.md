@@ -1,4 +1,5 @@
 # Odoo MCP Server that just works
+(Based on the tuanle96/mcp-odoo, thanks to him for its very good work)
 
 An MCP server implementation that integrates with Odoo ERP systems, enabling AI assistants to interact with Odoo data and functionality through the Model Context Protocol.
 
@@ -134,7 +135,7 @@ Add this to your `claude_desktop_config.json`:
 
 ## Installations methods
 
-## 1. Docker Build and run
+## 1. Docker Build and Run
 
 Docker build:
 
