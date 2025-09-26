@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odoo MCP HTTP Client Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .config {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .config input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .actions {
+            margin: 20px 0;
+        }
+        .actions button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .actions button:hover {
+            background: #0056b3;
+        }
+        .actions button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Odoo MCP HTTP Client Example</h1>
+
+        <div class="config">
+            <h3>Configuration</h3>
+            <input type="text" id="serverUrl" placeholder="Server URL (e.g., http://localhost:8000)" value="http://localhost:8000">
+            <input type="text" id="apiKey" placeholder="API Key" value="">
+            <div style="margin-top: 10px;">
+                <label>
+                    <input type="checkbox" id="useSession"> Use Session Management
+                </label>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button onclick="healthCheck()">Health Check</button>
+            <button onclick="createSession()">Create Session</button>
+            <button onclick="listTools()">List Tools</button>
+            <button onclick="listResources()">List Resources</button>
+            <button onclick="getModels()">Get Odoo Models</button>
+            <button onclick="getUsers()">Get Users</button>
+            <button onclick="searchEmployees()">Search Employees</button>
+            <button onclick="clearOutput()">Clear Output</button>
+        </div>
+
+        <div id="output" class="output"></div>
+    </div>
+
+    <script>
+        let sessionId = null;
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+
+            // Change output styling based on type
+            output.className = 'output';
+            if (type === 'error') {
+                output.classList.add('error');
+            } else if (type === 'success') {
+                output.classList.add('success');
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+            document.getElementById('output').className = 'output';
+        }
+
+        function getConfig() {
+            return {
+                serverUrl: document.getElementById('serverUrl').value.trim(),
+                apiKey: document.getElementById('apiKey').value.trim(),
+                useSession: document.getElementById('useSession').checked
+            };
+        }
+
+        async function makeRequest(endpoint, options = {}) {
+            const config = getConfig();
+
+            if (!config.serverUrl) {
+                throw new Error('Server URL is required');
+            }
+
+            if (!config.apiKey) {
+                throw new Error('API Key is required');
+            }
+
+            const headers = {
+                'Authorization': `Bearer ${config.apiKey}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (config.useSession && sessionId) {
+                headers['Mcp-Session-Id'] = sessionId;
+            }
+
+            const url = `${config.serverUrl}${endpoint}`;
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            return response.json();
+        }
+
+        async function mcpRequest(method, params = null, requestId = Date.now().toString()) {
+            const payload = {
+                jsonrpc: '2.0',
+                id: requestId,
+                method: method
+            };
+
+            if (params) {
+                payload.params = params;
+            }
+
+            return makeRequest('/mcp', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        }
+
+        async function healthCheck() {
+            try {
+                log('Checking server health...');
+                const result = await makeRequest('/health');
+                log(`Server is healthy! Status: ${result.status}`, 'success');
+                log(`Server time: ${result.timestamp}`);
+            } catch (error) {
+                log(`Health check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function createSession() {
+            try {
+                log('Creating session...');
+                const result = await makeRequest('/auth/token', { method: 'POST' });
+                sessionId = result.session_id;
+                log(`Session created: ${sessionId}`, 'success');
+                log(`Expires in: ${result.expires_in} seconds`);
+            } catch (error) {
+                log(`Session creation failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function listTools() {
+            try {
+                log('Listing available tools...');
+                const result = await mcpRequest('tools/list');
+
+                if (result.result && result.result.tools) {
+                    log(`Found ${result.result.tools.length} tools:`, 'success');
+                    result.result.tools.forEach(tool => {
+                        log(`  - ${tool.name}: ${tool.description}`);
+                    });
+                } else {
+                    log('No tools found or unexpected response format');
+                }
+            } catch (error) {
+                log(`Failed to list tools: ${error.message}`, 'error');
+            }
+        }
+
+        async function listResources() {
+            try {
+                log('Listing available resources...');
+                const result = await mcpRequest('resources/list');
+
+                if (result.result && result.result.resources) {
+                    log(`Found ${result.result.resources.length} resources:`, 'success');
+                    result.result.resources.forEach(resource => {
+                        log(`  - ${resource.uri}: ${resource.description}`);
+                    });
+                } else {
+                    log('No resources found or unexpected response format');
+                }
+            } catch (error) {
+                log(`Failed to list resources: ${error.message}`, 'error');
+            }
+        }
+
+        async function getModels() {
+            try {
+                log('Getting Odoo models...');
+                const result = await mcpRequest('resources/read', { uri: 'odoo://models' });
+
+                if (result.result && result.result.contents) {
+                    const content = JSON.parse(result.result.contents[0].text);
+                    const modelCount = content.model_names ? content.model_names.length : 0;
+                    log(`Found ${modelCount} Odoo models`, 'success');
+
+                    // Show first 10 models as example
+                    if (content.model_names && modelCount > 0) {
+                        log('First 10 models:');
+                        content.model_names.slice(0, 10).forEach(model => {
+                            log(`  - ${model}`);
+                        });
+                        if (modelCount > 10) {
+                            log(`  ... and ${modelCount - 10} more`);
+                        }
+                    }
+                } else {
+                    log('Unexpected response format for models');
+                }
+            } catch (error) {
+                log(`Failed to get models: ${error.message}`, 'error');
+            }
+        }
+
+        async function getUsers() {
+            try {
+                log('Getting Odoo users...');
+                const result = await mcpRequest('tools/call', {
+                    name: 'execute_method',
+                    arguments: {
+                        model: 'res.users',
+                        method: 'search_read',
+                        args: [[['id', '>', 0]]],
+                        kwargs: { limit: 5, fields: ['id', 'name', 'login'] }
+                    }
+                });
+
+                if (result.result && result.result.content) {
+                    const content = JSON.parse(result.result.content[0].text);
+                    if (content.success && content.result) {
+                        log(`Found ${content.result.length} users:`, 'success');
+                        content.result.forEach(user => {
+                            log(`  - ${user.name} (${user.login})`);
+                        });
+                    } else {
+                        log(`Failed to get users: ${content.error || 'Unknown error'}`, 'error');
+                    }
+                } else {
+                    log('Unexpected response format for users');
+                }
+            } catch (error) {
+                log(`Failed to get users: ${error.message}`, 'error');
+            }
+        }
+
+        async function searchEmployees() {
+            try {
+                log('Searching employees...');
+                const result = await mcpRequest('tools/call', {
+                    name: 'search_employee',
+                    arguments: {
+                        name: 'admin',
+                        limit: 10
+                    }
+                });
+
+                if (result.result && result.result.content) {
+                    const content = JSON.parse(result.result.content[0].text);
+                    if (content.success && content.result) {
+                        log(`Found ${content.result.length} employees matching 'admin':`, 'success');
+                        content.result.forEach(employee => {
+                            log(`  - ${employee.name} (ID: ${employee.id})`);
+                        });
+                    } else {
+                        log(`Search failed: ${content.error || 'Unknown error'}`, 'error');
+                    }
+                } else {
+                    log('Unexpected response format for employee search');
+                }
+            } catch (error) {
+                log(`Failed to search employees: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize with some helpful information
+        window.onload = function() {
+            log('Odoo MCP HTTP Client Example loaded');
+            log('1. Enter your server URL and API Key above');
+            log('2. Click "Health Check" to verify connection');
+            log('3. Optionally create a session for better performance');
+            log('4. Try the various operations using the buttons');
+            log('');
+        };
+    </script>
+</body>
+</html>

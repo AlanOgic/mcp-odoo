@@ -1,12 +1,16 @@
-# Odoo MCP Server that just works
+# Odoo MCP Server with HTTP Transport
 (Based on the tuanle96/mcp-odoo, thanks to him for his very good work)
 
-An MCP server implementation that integrates with Odoo ERP systems, enabling AI assistants to interact with Odoo data and functionality through the Model Context Protocol.
+An MCP server implementation that integrates with Odoo ERP systems, enabling AI assistants to interact with Odoo data and functionality through the Model Context Protocol. Now featuring both stdio and HTTP transport layers for maximum flexibility.
 
 ## Features
 
+* **Dual Transport Support**: Both stdio (traditional) and HTTP transport layers
 * **Comprehensive Odoo Integration**: Full access to Odoo models, records, and methods
 * **XML-RPC Communication**: Secure connection to Odoo instances via XML-RPC
+* **HTTP Transport Security**: API key authentication, rate limiting, and CORS support
+* **Session Management**: Secure session handling for HTTP clients
+* **SSL/TLS Support**: HTTPS encryption for production deployments
 * **Flexible Configuration**: Support for config files and environment variables
 * **Resource Pattern System**: URI-based access to Odoo data structures
 * **Error Handling**: Clear error messages for common Odoo API issues
@@ -82,6 +86,32 @@ An MCP server implementation that integrates with Odoo ERP systems, enabling AI 
    * `ODOO_TIMEOUT`: Connection timeout in seconds (default: 30)
    * `ODOO_VERIFY_SSL`: Whether to verify SSL certificates (default: true)
    * `HTTP_PROXY`: Force the ODOO connection to use an HTTP proxy
+
+### HTTP Transport Configuration
+
+For HTTP transport, you can configure additional settings via environment variables or `http_config.json`:
+
+```json
+{
+  "host": "0.0.0.0",
+  "port": 8000,
+  "path": "/mcp",
+  "require_https": false,
+  "allowed_origins": ["*"],
+  "ssl_certfile": null,
+  "ssl_keyfile": null,
+  "default_rate_limit": 1000,
+  "session_timeout": 3600
+}
+```
+
+HTTP environment variables:
+* `HTTP_HOST`: Server host (default: 127.0.0.1)
+* `HTTP_PORT`: Server port (default: 8000)
+* `REQUIRE_HTTPS`: Force HTTPS (default: false)
+* `ALLOWED_ORIGINS`: Comma-separated CORS origins (default: *)
+* `SSL_CERTFILE`: SSL certificate file path
+* `SSL_KEYFILE`: SSL private key file path
 
 ### Usage with Claude Desktop
 
@@ -159,8 +189,10 @@ pip install odoo-mcp
 
 ### Running the Server
 
+#### Stdio Transport (Traditional MCP)
+
 ```bash
-# Using the installed package
+# Using the installed package (default stdio transport)
 odoo-mcp
 
 # Using the MCP development tools
@@ -172,6 +204,53 @@ mcp dev odoo_mcp/server.py --with pandas --with numpy
 # Mount local code for development
 mcp dev odoo_mcp/server.py --with-editable .
 ```
+
+#### HTTP Transport (New)
+
+```bash
+# Run HTTP server in development mode
+odoo-mcp --transport http --dev
+
+# Run HTTP server with custom host/port
+odoo-mcp --transport http --host 0.0.0.0 --port 8080
+
+# Run HTTPS server with SSL certificates
+odoo-mcp --transport http --ssl-cert /path/to/cert.pem --ssl-key /path/to/key.pem
+
+# Run with custom configuration file
+odoo-mcp --transport http --config http_config.json
+```
+
+#### API Key Management
+
+```bash
+# Create a new API key
+odoo-mcp --create-api-key "my-application"
+
+# List all API keys
+odoo-mcp --list-api-keys
+```
+
+#### HTTP Transport Usage
+
+Once the HTTP server is running, you can access:
+
+* **Health Check**: `GET http://localhost:8000/health`
+* **API Documentation**: `GET http://localhost:8000/docs`
+* **MCP Endpoint**: `POST http://localhost:8000/mcp`
+
+Example HTTP request:
+```bash
+curl -X POST \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' \
+  http://localhost:8000/mcp
+```
+
+**Client Examples:**
+* Python client: See `examples/http_client_example.py`
+* JavaScript client: See `examples/javascript_client_example.html`
 
 
 

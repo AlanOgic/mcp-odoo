@@ -1,0 +1,33 @@
+{
+  "host": "0.0.0.0",
+  "port": 443,
+  "path": "/mcp",
+  "require_https": true,
+  "allowed_origins": [
+    "https://your-domain.com",
+    "https://app.your-domain.com"
+  ],
+  "ssl_certfile": "/path/to/certificate.pem",
+  "ssl_keyfile": "/path/to/private-key.pem",
+  "ssl_ca_certs": "/path/to/ca-bundle.pem",
+  "default_rate_limit": 1000,
+  "session_timeout": 1800,
+  "max_sessions": 1000,
+  "allow_credentials": true,
+  "allow_methods": ["GET", "POST", "OPTIONS"],
+  "allow_headers": [
+    "Authorization",
+    "Content-Type",
+    "Mcp-Session-Id",
+    "Accept",
+    "Origin",
+    "X-Requested-With"
+  ],
+  "expose_headers": [
+    "Mcp-Session-Id",
+    "Content-Type"
+  ],
+  "max_age": 86400,
+  "max_request_size": 10485760,
+  "request_timeout": 300
+}

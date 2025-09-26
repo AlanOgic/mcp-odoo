@@ -2,13 +2,12 @@
 Odoo XML-RPC client for MCP server integration
 """
 
+import http.client
 import json
 import os
 import re
 import socket
 import urllib.parse
-
-import http.client
 import xmlrpc.client
 
 

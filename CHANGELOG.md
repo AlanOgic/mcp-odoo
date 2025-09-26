@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0] - 2025-09-26
+
+### Added
+- **HTTP Transport Layer**: Complete HTTP transport implementation alongside existing stdio transport
+- **Security System**: API key authentication with SHA256 hashing, rate limiting, and scope-based authorization
+- **Session Management**: Secure session handling with configurable timeouts for HTTP clients
+- **SSL/TLS Support**: HTTPS encryption support for production deployments
+- **Configuration Management**: Unified configuration system supporting both Odoo and HTTP transport settings
+- **CORS Support**: Configurable Cross-Origin Resource Sharing for web clients
+- **Interactive API Documentation**: Auto-generated API docs at `/docs` endpoint
+- **Health Check Endpoint**: Server health monitoring at `/health` endpoint
+- **Client Examples**: Python and JavaScript client examples for HTTP transport
+- **Command-line Transport Selection**: `--transport` flag to choose between stdio and HTTP
+- **API Key Management**: CLI commands for creating and listing API keys
+- **Production Configuration**: Example configurations for development and production environments
+
+### Enhanced
+- **Dual Transport Support**: Server now supports both stdio (traditional MCP) and HTTP transport
+- **Command-line Interface**: Extended CLI with HTTP server options and API key management
+- **Documentation**: Comprehensive documentation updates covering HTTP transport usage
+- **Error Handling**: Improved error handling for HTTP transport with proper status codes
+
+### Dependencies
+- Added FastAPI for HTTP server functionality
+- Added uvicorn for ASGI server implementation
+- Added python-jose for JWT token handling
+- Added passlib for password hashing (fallback to SHA256)
+- Added sse-starlette for Server-Sent Events support
+- Added python-multipart for multipart form support
+
 ## [0.0.3] - 2025-03-18
 
 ### Fixed

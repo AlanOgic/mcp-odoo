@@ -8,6 +8,7 @@ dist/
 build/
 *.egg-info/
 *.egg
+pwd
 
 # Virtual environments
 venv/
@@ -47,4 +48,9 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-.hypothesis/ 
+.hypothesis/
+.pytest_cache/
+
+# Linting and type checking caches
+.mypy_cache/
+.ruff_cache/

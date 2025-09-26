@@ -8,7 +8,7 @@ import json
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, AsyncIterator, Dict, List, Optional, Union, cast
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
 from mcp.server.fastmcp import Context, FastMCP
 from pydantic import BaseModel, Field
@@ -44,6 +44,11 @@ mcp = FastMCP(
     dependencies=["requests"],
     lifespan=app_lifespan,
 )
+
+
+def get_mcp_server():
+    """Get the MCP server instance"""
+    return mcp
 
 
 # ----- MCP Resources -----
@@ -313,7 +318,7 @@ def execute_method(
                             parsed_domain = ast.literal_eval(domain)
                             if isinstance(parsed_domain, list):
                                 domain_list = parsed_domain
-                        except:
+                        except Exception:
                             domain_list = []
 
                 # Xác thực domain_list
