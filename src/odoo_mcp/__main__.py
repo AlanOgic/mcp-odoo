@@ -66,9 +66,9 @@ def main() -> int:
 
             keys = security_manager.list_api_keys()
             print("API Keys:")
-            for key in keys:
+            for api_key in keys:
                 print(
-                    f"  {key['name']} (ID: {key['key_id']}) - Scopes: {key['scopes']}"
+                    f"  {api_key['name']} (ID: {api_key['key_id']}) - Scopes: {api_key['scopes']}"
                 )
             return 0
 

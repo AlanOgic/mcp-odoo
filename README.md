@@ -239,7 +239,15 @@ Once the HTTP server is running, you can access:
 * **API Documentation**: `GET http://localhost:8000/docs`
 * **MCP Endpoint**: `POST http://localhost:8000/mcp`
 
-Example HTTP request:
+Example HTTP request (with API key in URL):
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"tools/list"}' \
+  "http://localhost:8000/mcp?api_key=your_api_key_here"
+```
+
+Or with Authorization header:
 ```bash
 curl -X POST \
   -H "Authorization: Bearer your_api_key_here" \

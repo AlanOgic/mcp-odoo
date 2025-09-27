@@ -71,7 +71,7 @@ class SessionInfo(BaseModel):
 class HTTPTransport:
     """HTTP Transport implementation for MCP"""
 
-    def __init__(self, config: HTTPConfig, mcp_server):
+    def __init__(self, config: HTTPConfig, mcp_server: Any) -> None:
         self.config = config
         self.mcp_server = mcp_server
         self.sessions: Dict[str, SessionInfo] = {}
@@ -81,7 +81,7 @@ class HTTPTransport:
         """Create and configure FastAPI application"""
 
         @asynccontextmanager
-        async def lifespan(app: FastAPI):
+        async def lifespan(app: FastAPI):  # type: ignore
             """Application lifespan manager"""
             print(
                 f"Starting HTTP transport server on {self.config.host}:{self.config.port}"
@@ -109,7 +109,7 @@ class HTTPTransport:
 
         # Add request size middleware
         @app.middleware("http")
-        async def limit_request_size(request: Request, call_next):
+        async def limit_request_size(request: Request, call_next):  # type: ignore
             """Middleware to limit request size"""
             content_length = request.headers.get("content-length")
             if content_length and int(content_length) > self.config.max_request_size:
@@ -124,7 +124,7 @@ class HTTPTransport:
 
         # Routes
         @app.get("/health")
-        async def health_check():
+        async def health_check() -> Dict[str, Any]:
             """Health check endpoint"""
             return {
                 "status": "healthy",
@@ -133,7 +133,7 @@ class HTTPTransport:
             }
 
         @app.post("/auth/token")
-        async def create_token(api_key: APIKey = Depends(auth)):
+        async def create_token(api_key: APIKey = Depends(auth)) -> Dict[str, Any]:
             """Create a new session token"""
             session_id = str(uuid.uuid4())
             session_info = SessionInfo(
@@ -147,7 +147,7 @@ class HTTPTransport:
             return {"session_id": session_id, "expires_in": self.config.session_timeout}
 
         @app.post(self.config.path)
-        async def mcp_endpoint(
+        async def mcp_endpoint(  # type: ignore
             request: Request,
             mcp_request: MCPRequest,
             session_id: Optional[str] = None,
@@ -211,7 +211,9 @@ class HTTPTransport:
                 )
 
         @app.get(f"{self.config.path}/sessions")
-        async def list_sessions(api_key: APIKey = Depends(auth)):
+        async def list_sessions(
+            api_key: APIKey = Depends(auth),
+        ) -> Dict[str, List[Dict[str, Any]]]:
             """List active sessions (admin only)"""
             if "admin" not in api_key.scopes:
                 raise HTTPException(status_code=403, detail="Admin access required")
@@ -229,7 +231,9 @@ class HTTPTransport:
             }
 
         @app.delete(f"{self.config.path}/sessions/{{session_id}}")
-        async def delete_session(session_id: str, api_key: APIKey = Depends(auth)):
+        async def delete_session(
+            session_id: str, api_key: APIKey = Depends(auth)
+        ) -> Dict[str, str]:
             """Delete a session"""
             if session_id not in self.sessions:
                 raise HTTPException(status_code=404, detail="Session not found")
@@ -247,7 +251,9 @@ class HTTPTransport:
             return {"message": "Session deleted"}
 
         @app.get("/api-keys")
-        async def list_api_keys(api_key: APIKey = Depends(auth)):
+        async def list_api_keys(
+            api_key: APIKey = Depends(auth),
+        ) -> Dict[str, List[Dict[str, Any]]]:
             """List API keys (admin only)"""
             if "admin" not in api_key.scopes:
                 raise HTTPException(status_code=403, detail="Admin access required")
@@ -260,7 +266,7 @@ class HTTPTransport:
             scopes: List[str] = [],
             rate_limit: int = 1000,
             api_key: APIKey = Depends(auth),
-        ):
+        ) -> Dict[str, Any]:
             """Create a new API key (admin only)"""
             if "admin" not in api_key.scopes:
                 raise HTTPException(status_code=403, detail="Admin access required")
@@ -426,7 +432,7 @@ class HTTPTransport:
                     self.lifespan_context = lifespan_context
 
             # Create mock context
-            mock_context = Context(request_context=MockRequestContext(app_context))
+            mock_context: Any = Context(request_context=MockRequestContext(app_context))  # type: ignore
 
             # Call the appropriate tool
             if tool_name == "execute_method":
@@ -537,7 +543,7 @@ class HTTPTransport:
 
     async def _stream_results(
         self, response: MCPResponse, request_id: Optional[Union[str, int]]
-    ):
+    ):  # type: ignore
         """Stream results as Server-Sent Events"""
         if not isinstance(response.result, list):
             # Single result
@@ -554,7 +560,7 @@ class HTTPTransport:
         # End of stream
         yield "data: [DONE]\n\n"
 
-    def cleanup_expired_sessions(self):
+    def cleanup_expired_sessions(self) -> None:
         """Clean up expired sessions"""
         now = datetime.utcnow()
         expired_sessions = [
@@ -571,7 +577,7 @@ class HTTPTransport:
             print(f"Cleaned up {len(expired_sessions)} expired sessions")
 
 
-def create_http_app(config: AppConfig, mcp_server) -> FastAPI:
+def create_http_app(config: AppConfig, mcp_server: Any) -> FastAPI:
     """Create HTTP transport FastAPI application"""
     transport = HTTPTransport(config.http, mcp_server)
     return transport.app

@@ -46,7 +46,7 @@ mcp = FastMCP(
 )
 
 
-def get_mcp_server():
+def get_mcp_server() -> FastMCP:
     """Get the MCP server instance"""
     return mcp
 
@@ -220,7 +220,7 @@ def execute_method(
     ctx: Context,
     model: str,
     method: str,
-    args: List = None,
+    args: Optional[List] = None,
     kwargs: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -248,14 +248,14 @@ def execute_method(
         if method in search_methods and args:
             # Search methods usually have domain as the first parameter
             # args: [[domain], limit, offset, ...] or [domain, limit, offset, ...]
-            normalized_args = list(
+            normalized_args: List[Any] = list(
                 args
             )  # Create a copy to avoid affecting the original args
 
             if len(normalized_args) > 0:
                 # Process domain in args[0]
                 domain = normalized_args[0]
-                domain_list = []
+                domain_list: List[Any] = []
 
                 # Check if domain is wrapped unnecessarily ([domain] instead of domain)
                 if (
@@ -321,7 +321,7 @@ def execute_method(
                         except Exception:
                             domain_list = []
 
-                # Xác thực domain_list
+                # Validate domain_list structure
                 if domain_list:
                     valid_conditions = []
                     for cond in domain_list:
@@ -339,7 +339,7 @@ def execute_method(
 
                     domain_list = valid_conditions
 
-                # Cập nhật args với domain đã chuẩn hóa
+                # Update args with normalized domain
                 normalized_args[0] = domain_list
                 args = normalized_args
 
@@ -372,7 +372,7 @@ def search_employee(
     model = "hr.employee"
     method = "name_search"
 
-    args = []
+    args: List[Any] = []
     kwargs = {"name": name, "limit": limit}
 
     try:
@@ -433,7 +433,7 @@ def search_holidays(
     ]
     if employee_id:
         domain.append(
-            ["employee_id", "=", employee_id],
+            ["employee_id", "=", int(employee_id)],
         )
 
     try:

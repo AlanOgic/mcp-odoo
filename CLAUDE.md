@@ -227,6 +227,78 @@ curl -X POST -H "Authorization: Bearer your_api_key" \
 - **HTTPS Support**: TLS/SSL encryption for production
 - **Scope-based Authorization**: Fine-grained access control
 
+## Claude Code Integration
+
+### Adding Odoo MCP Server to Claude Code
+
+To use the Odoo MCP server with HTTP transport in Claude Code (claude.ai/code), follow these steps:
+
+1. **Start the HTTP Server**:
+   ```bash
+   # Start server with development mode (creates default API key)
+   source venv/bin/activate && odoo-mcp --transport http --dev
+
+   # Or start with specific configuration
+   source venv/bin/activate && odoo-mcp --transport http --config http_config.json
+   ```
+
+2. **Get or Create an API Key**:
+   ```bash
+   # List existing API keys
+   source venv/bin/activate && odoo-mcp --list-api-keys
+
+   # Create a new API key for Claude Code
+   source venv/bin/activate && odoo-mcp --create-api-key "claude-code"
+   # Save the generated API key - you'll need it for configuration
+   ```
+
+3. **Configure in Claude Code**:
+
+   In Claude Code, you can add the server with the API key directly in the URL:
+
+   ```
+   /mcp add http://localhost:8000/mcp?api_key=YOUR_API_KEY_HERE
+   ```
+
+   Replace `YOUR_API_KEY_HERE` with the actual API key from step 2.
+
+   **Alternative**: If prompted for authentication headers, you can also use:
+   - **Header Name**: `Authorization`
+   - **Header Value**: `Bearer YOUR_API_KEY_HERE`
+
+4. **Verify Connection**:
+
+   After adding the server, Claude Code should be able to:
+   - List available Odoo models
+   - Search and retrieve records
+   - Execute Odoo methods
+   - Access all configured MCP tools and resources
+
+### Using with HTTPS
+
+For production use with HTTPS:
+
+1. **Start with SSL certificates**:
+   ```bash
+   source venv/bin/activate && odoo-mcp --transport http \
+     --ssl-cert /path/to/cert.pem \
+     --ssl-key /path/to/key.pem \
+     --host 0.0.0.0 \
+     --port 443
+   ```
+
+2. **Configure in Claude Code**:
+   ```
+   /mcp add https://your-domain.com/mcp
+   ```
+
+### Troubleshooting
+
+- **Connection refused**: Ensure the HTTP server is running and accessible
+- **Authentication failed**: Verify the API key is correct and has proper format (`Bearer` prefix)
+- **CORS errors**: Check `ALLOWED_ORIGINS` configuration if accessing from a browser
+- **Rate limit exceeded**: API keys have default rate limit of 1000 requests/hour
+
 ## Important Notes
 
 - The server uses XML-RPC protocol for Odoo communication (endpoints: `/xmlrpc/2/common` and `/xmlrpc/2/object`)

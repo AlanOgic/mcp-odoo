@@ -7,7 +7,7 @@ Provides a standalone HTTP server for the Odoo MCP with secure transport
 import asyncio
 import signal
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 import uvicorn
 
@@ -27,7 +27,7 @@ class HTTPServer:
         self.server: Optional[uvicorn.Server] = None
         self.cleanup_task: Optional[asyncio.Task] = None
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the HTTP server"""
         # Setup graceful shutdown
         self._setup_signal_handlers()
@@ -75,7 +75,7 @@ class HTTPServer:
 
         await self.server.serve()
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the HTTP server"""
         print("\nShutting down HTTP server...")
 
@@ -89,17 +89,17 @@ class HTTPServer:
         if self.server:
             self.server.should_exit = True
 
-    def _setup_signal_handlers(self):
+    def _setup_signal_handlers(self) -> None:
         """Setup signal handlers for graceful shutdown"""
 
-        def signal_handler(signum, frame):
+        def signal_handler(signum: int, frame: Any) -> None:
             print(f"\nReceived signal {signum}, shutting down...")
             asyncio.create_task(self.stop())
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-    async def _periodic_cleanup(self):
+    async def _periodic_cleanup(self) -> None:
         """Periodic cleanup task for expired sessions"""
         while True:
             try:
@@ -118,7 +118,7 @@ def run_http_server(
     ssl_cert: Optional[str] = None,
     ssl_key: Optional[str] = None,
     cors_origins: Optional[str] = None,
-):
+) -> None:
     """
     Run the HTTP server with command line options
 
@@ -167,7 +167,7 @@ def run_http_server(
         sys.exit(1)
 
 
-async def create_development_server():
+async def create_development_server() -> HTTPServer:
     """Create a development server for testing"""
     from .config import HTTPConfig
 

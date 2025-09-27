@@ -32,8 +32,17 @@ logs/
 .env.test.local
 .env.production.local
 
-# Odoo specific
+# Odoo specific - Configuration files with credentials
 odoo_config.json
+odoo_config.json.backup
+http_config.json.production
+
+# Security sensitive files
+*.key
+*.pem
+*.crt
+*_config.json
+!*_config.json.example
 
 # System files
 .DS_Store

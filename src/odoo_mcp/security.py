@@ -12,6 +12,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Set
+from passlib.context import CryptContext
 
 from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -22,7 +23,8 @@ SECRET_KEY = secrets.token_urlsafe(32)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
-# Password hashing - use simple SHA256 for now due to bcrypt issues
+# Password hashing using PBKDF2 (more secure for long keys than bcrypt)
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 @dataclass
@@ -40,7 +42,7 @@ class APIKey:
 
     def verify_key(self, key: str) -> bool:
         """Verify a plain text key against the stored hash"""
-        return self.key_hash == hashlib.sha256(key.encode()).hexdigest()
+        return bool(pwd_context.verify(key, self.key_hash))
 
     def update_last_used(self) -> None:
         """Update the last used timestamp"""
@@ -107,7 +109,7 @@ class SecurityManager:
         """
         key_id = secrets.token_urlsafe(16)
         plain_key = f"odoo_mcp_{secrets.token_urlsafe(32)}"
-        key_hash = hashlib.sha256(plain_key.encode()).hexdigest()
+        key_hash = pwd_context.hash(plain_key)
 
         api_key = APIKey(
             key_id=key_id,
@@ -213,9 +215,9 @@ class APIKeyAuth(HTTPBearer):
     def __init__(self, auto_error: bool = True):
         super().__init__(auto_error=auto_error)
 
-    async def __call__(self, request: Request) -> Optional[APIKey]:
+    async def __call__(self, request: Request) -> Optional[APIKey]:  # type: ignore[override]
         """
-        Authenticate request using API key
+        Authenticate request using API key from Bearer token or query parameter
 
         Args:
             request: FastAPI request object
@@ -226,16 +228,30 @@ class APIKeyAuth(HTTPBearer):
         Raises:
             HTTPException: If authentication fails
         """
-        credentials: HTTPAuthorizationCredentials = await super().__call__(request)
+        api_key_str = None
 
-        if not credentials:
+        # First, try to get API key from query parameter
+        if "api_key" in request.query_params:
+            api_key_str = request.query_params["api_key"]
+        else:
+            # Fall back to Bearer token authentication
+            try:
+                credentials: Optional[
+                    HTTPAuthorizationCredentials
+                ] = await super().__call__(request)
+                if credentials:
+                    api_key_str = credentials.credentials
+            except Exception:
+                pass
+
+        if not api_key_str:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Missing API key",
+                detail="Missing API key (provide as ?api_key=YOUR_KEY or Authorization header)",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        api_key = security_manager.verify_api_key(credentials.credentials)
+        api_key = security_manager.verify_api_key(api_key_str)
         if not api_key:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -253,7 +269,7 @@ class APIKeyAuth(HTTPBearer):
         return api_key
 
 
-def require_scope(required_scope: str):
+def require_scope(required_scope: str) -> Any:
     """
     Decorator to require specific scopes for endpoints
 
@@ -296,10 +312,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return str(encoded_jwt)
 
 
-def verify_token(token: str) -> Optional[dict]:
+def verify_token(token: str) -> Optional[Dict[Any, Any]]:
     """
     Verify and decode a JWT token
 
@@ -311,7 +327,7 @@ def verify_token(token: str) -> Optional[dict]:
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        return dict(payload) if payload else None
     except JWTError:
         return None
 
